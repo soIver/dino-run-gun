@@ -6,6 +6,7 @@ class Dinosaur:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+        self.hp = 3
         self.velocity_y = 0
         self.is_jumping = False
         self.is_ducking = False

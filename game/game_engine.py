@@ -23,8 +23,8 @@ class GameEngine:
 
     def reset_game(self):
         self.dinosaur = Dinosaur(100, GROUND_LEVEL - 60)
-        self.fireballs = []
-        self.obstacles = []
+        self.fireballs: list[Fireball] = []
+        self.obstacles: list[GroundObstacle | FlyingObstacle] = []
         self.game_speed = BASE_GAME_SPEED
         self.score = 0
         self.last_obstacle_time = 0
@@ -119,19 +119,20 @@ class GameEngine:
 
     def check_collisions(self):
         for obstacle in self.obstacles[:]:
-            if obstacle.check_collision(self.dinosaur) and not obstacle.destroyed:
-                self.game_over = True
+            if obstacle.check_collision(self.dinosaur):
+                self.dinosaur.hp -= 1
+                self.obstacles.remove(obstacle)
+                self.game_speed = max(BASE_GAME_SPEED, self.game_speed - SPEED_DECREMENT_ON_HIT)
+                if self.dinosaur.hp <= 0:
+                    self.game_over = True
                 return
 
-        for fireball in self.fireballs[:]:
-            for obstacle in self.obstacles[:]:
+            for fireball in self.fireballs[:]:
                 if fireball.check_collision(obstacle):
-                    should_remove_fireball = obstacle.handle_fireball_collision(fireball)
+                    obstacle.handle_fireball_collision(fireball)
 
-                    if should_remove_fireball:
-                        fireball.active = False
-                        if fireball in self.fireballs:
-                            self.fireballs.remove(fireball)
+                    if fireball in self.fireballs:
+                        self.fireballs.remove(fireball)
 
                     if obstacle.destroyed and obstacle in self.obstacles:
                         self.obstacles.remove(obstacle)
