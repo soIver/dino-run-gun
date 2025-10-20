@@ -46,7 +46,7 @@ class GameEngine:
                     elif event.key == pygame.K_DOWN:
                         self.dinosaur.duck()
                     elif event.key == pygame.K_f:
-                        fireball = self.dinosaur.shoot()
+                        fireball = self.dinosaur.shoot(self.game_speed)
                         if fireball:
                             self.fireballs.append(fireball)
             elif event.type == pygame.KEYUP:
@@ -142,8 +142,8 @@ class GameEngine:
     def draw(self):
         self.screen.fill((255, 255, 255))
 
-        pygame.draw.line(self.screen, (0, 0, 0), (0, GROUND_LEVEL),
-                         (SCREEN_WIDTH, GROUND_LEVEL), 2)
+        pygame.draw.line(self.screen, (0, 0, 0), (0, GROUND_LEVEL - 30),
+                         (SCREEN_WIDTH, GROUND_LEVEL - 30), 2)
 
         dino_color = (100, 100, 100) if not self.dinosaur.is_ducking else (150, 150, 150)
         pygame.draw.rect(self.screen, dino_color, self.dinosaur.rect)
@@ -156,8 +156,11 @@ class GameEngine:
 
         score_text = self.font.render(f'Score: {self.score}', True, (0, 0, 0))
         speed_text = self.font.render(f'Speed: {self.game_speed}', True, (0, 0, 0))
+        hp_text = self.font.render(f'HP: {self.dinosaur.hp}', True, (0, 0, 0))
+
         self.screen.blit(score_text, (10, 10))
         self.screen.blit(speed_text, (10, 50))
+        self.screen.blit(hp_text, (10, 90))
 
         if self.show_controls:
             controls_text = self.small_font.render('Press F to shoot fireballs', True, (0, 0, 0))
