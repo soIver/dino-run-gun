@@ -21,8 +21,13 @@ class GameEngine:
         self.show_controls = True
         self.controls_timer = pygame.time.get_ticks()
 
+        from assets.config import ANIMATION_CONFIG
+        self.dinosaur.load_animations(ANIMATION_CONFIG)
+
     def reset_game(self):
         self.dinosaur = Dinosaur(100, GROUND_LEVEL - 60)
+        from assets.config import ANIMATION_CONFIG
+        self.dinosaur.load_animations(ANIMATION_CONFIG)
         self.fireballs: list[Fireball] = []
         self.obstacles: list[GroundObstacle | FlyingObstacle] = []
         self.game_speed = BASE_GAME_SPEED
@@ -46,14 +51,10 @@ class GameEngine:
                     elif event.key == pygame.K_DOWN:
                         self.dinosaur.duck()
                     elif event.key == pygame.K_f:
-                        fireball = self.dinosaur.shoot(self.game_speed)
-                        if fireball:
-                            self.fireballs.append(fireball)
+                        self.dinosaur.shoot(self.game_speed)
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_DOWN:
-                    self.dinosaur.is_duck_key_pressed = False
-                    if not self.dinosaur.is_jumping:
-                        self.dinosaur.is_ducking = False
+                    self.dinosaur.stand_up()
 
     def generate_obstacle(self):
         current_time = pygame.time.get_ticks()
@@ -93,11 +94,14 @@ class GameEngine:
             self.game_speed += SPEED_INCREMENT
             self.last_speed_increase = current_time
 
-    def update_game_state(self):
+    def update_game_state(self, dt):
         if self.game_over:
             return
 
-        self.dinosaur.update()
+        # проверка создания снаряда после задержки
+        fireball = self.dinosaur.update(dt, self.game_speed)
+        if fireball:
+            self.fireballs.append(fireball)
 
         for fireball in self.fireballs[:]:
             fireball.update()
@@ -131,7 +135,8 @@ class GameEngine:
                 if fireball.check_collision(obstacle):
                     obstacle.handle_fireball_collision(fireball)
 
-                    if fireball in self.fireballs:
+                    # удаляем снаряд только если он не взрывается
+                    if not fireball.is_exploding and fireball in self.fireballs:
                         self.fireballs.remove(fireball)
 
                     if obstacle.destroyed and obstacle in self.obstacles:
@@ -145,32 +150,31 @@ class GameEngine:
         pygame.draw.line(self.screen, (0, 0, 0), (0, GROUND_LEVEL - 30),
                          (SCREEN_WIDTH, GROUND_LEVEL - 30), 2)
 
-        dino_color = (100, 100, 100) if not self.dinosaur.is_ducking else (150, 150, 150)
-        pygame.draw.rect(self.screen, dino_color, self.dinosaur.rect)
+        self.dinosaur.draw(self.screen)
 
         for fireball in self.fireballs:
-            pygame.draw.rect(self.screen, (255, 0, 0), fireball.rect)
+            fireball.draw(self.screen)
 
         for obstacle in self.obstacles:
             pygame.draw.rect(self.screen, obstacle.color, obstacle.rect)
 
-        score_text = self.font.render(f'Score: {self.score}', True, (0, 0, 0))
-        speed_text = self.font.render(f'Speed: {self.game_speed}', True, (0, 0, 0))
-        hp_text = self.font.render(f'HP: {self.dinosaur.hp}', True, (0, 0, 0))
+        score_text = self.font.render(f'Счёт: {self.score}', True, (0, 0, 0))
+        speed_text = self.font.render(f'Скорость: {self.game_speed}', True, (0, 0, 0))
+        hp_text = self.font.render(f'Здоровье: {self.dinosaur.hp}', True, (0, 0, 0))
 
         self.screen.blit(score_text, (10, 10))
         self.screen.blit(speed_text, (10, 50))
         self.screen.blit(hp_text, (10, 90))
 
         if self.show_controls:
-            controls_text = self.small_font.render('Press F to shoot fireballs', True, (0, 0, 0))
+            controls_text = self.small_font.render('Нажмите F чтобы стрелять', True, (0, 0, 0))
             self.screen.blit(controls_text,
                              (SCREEN_WIDTH // 2 - controls_text.get_width() // 2,
                               50))
 
         if self.game_over:
-            game_over_text = self.big_font.render('Game Over', True, (255, 0, 0))
-            restart_text = self.font.render('Press R to restart', True, (0, 0, 0))
+            game_over_text = self.big_font.render('Вы вымерли', True, (255, 0, 0))
+            restart_text = self.font.render('Нажмите R чтобы начать заново', True, (0, 0, 0))
             self.screen.blit(game_over_text,
                              (SCREEN_WIDTH // 2 - game_over_text.get_width() // 2,
                               SCREEN_HEIGHT // 2 - 50))
@@ -182,8 +186,9 @@ class GameEngine:
 
     def run(self):
         while self.running:
+            dt = self.clock.get_time()
             self.handle_events()
-            self.update_game_state()
+            self.update_game_state(dt)
             self.draw()
             self.clock.tick(60)
 
