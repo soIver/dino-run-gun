@@ -1,12 +1,15 @@
 import pygame
-from config import GROUND_LEVEL, GRAVITY, JUMP_STRENGTH, DUCKING_GRAVITY_MULTIPLIER
+from config import GROUND_LEVEL, GRAVITY, JUMP_STRENGTH, DUCKING_GRAVITY_MULTIPLIER, FIREBALL_COOLDOWN
 
 
 class Dinosaur:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+        self.hp = 3
         self.velocity_y = 0
+        self.cooldown = FIREBALL_COOLDOWN
+        self.can_shoot = True
         self.is_jumping = False
         self.is_ducking = False
         self.is_running = True
@@ -36,14 +39,21 @@ class Dinosaur:
         if not self.is_jumping:
             self.is_ducking = False
 
-    def shoot(self):
-        if not self.is_ducking:
+    def shoot(self, game_speed):
+        if not self.is_ducking and self.can_shoot:
+            current_time = pygame.time.get_ticks()
+            self.can_shoot = False
+            self.cooldown_timer = current_time + FIREBALL_COOLDOWN
             from entities.fireball import Fireball
-            return Fireball(self.x + 50, self.y + 20)
+            return Fireball(self.x + 50, self.y + 20, game_speed)
         return None
 
     def update(self):
-        # обновление позиции хитбоксов
+        current_time = pygame.time.get_ticks()
+        # првоерка кулдауна на выстрел
+        if not self.can_shoot and current_time >= self.cooldown_timer:
+            self.can_shoot = True
+
         if self.is_ducking:
             self.ducking_rect.x = self.x
             self.ducking_rect.y = GROUND_LEVEL - 30

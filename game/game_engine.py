@@ -23,8 +23,8 @@ class GameEngine:
 
     def reset_game(self):
         self.dinosaur = Dinosaur(100, GROUND_LEVEL - 60)
-        self.fireballs = []
-        self.obstacles = []
+        self.fireballs: list[Fireball] = []
+        self.obstacles: list[GroundObstacle | FlyingObstacle] = []
         self.game_speed = BASE_GAME_SPEED
         self.score = 0
         self.last_obstacle_time = 0
@@ -46,7 +46,7 @@ class GameEngine:
                     elif event.key == pygame.K_DOWN:
                         self.dinosaur.duck()
                     elif event.key == pygame.K_f:
-                        fireball = self.dinosaur.shoot()
+                        fireball = self.dinosaur.shoot(self.game_speed)
                         if fireball:
                             self.fireballs.append(fireball)
             elif event.type == pygame.KEYUP:
@@ -119,19 +119,20 @@ class GameEngine:
 
     def check_collisions(self):
         for obstacle in self.obstacles[:]:
-            if obstacle.check_collision(self.dinosaur) and not obstacle.destroyed:
-                self.game_over = True
+            if obstacle.check_collision(self.dinosaur):
+                self.dinosaur.hp -= 1
+                self.obstacles.remove(obstacle)
+                self.game_speed = max(BASE_GAME_SPEED, self.game_speed - SPEED_DECREMENT_ON_HIT)
+                if self.dinosaur.hp <= 0:
+                    self.game_over = True
                 return
 
-        for fireball in self.fireballs[:]:
-            for obstacle in self.obstacles[:]:
+            for fireball in self.fireballs[:]:
                 if fireball.check_collision(obstacle):
-                    should_remove_fireball = obstacle.handle_fireball_collision(fireball)
+                    obstacle.handle_fireball_collision(fireball)
 
-                    if should_remove_fireball:
-                        fireball.active = False
-                        if fireball in self.fireballs:
-                            self.fireballs.remove(fireball)
+                    if fireball in self.fireballs:
+                        self.fireballs.remove(fireball)
 
                     if obstacle.destroyed and obstacle in self.obstacles:
                         self.obstacles.remove(obstacle)
@@ -141,8 +142,8 @@ class GameEngine:
     def draw(self):
         self.screen.fill((255, 255, 255))
 
-        pygame.draw.line(self.screen, (0, 0, 0), (0, GROUND_LEVEL),
-                         (SCREEN_WIDTH, GROUND_LEVEL), 2)
+        pygame.draw.line(self.screen, (0, 0, 0), (0, GROUND_LEVEL - 30),
+                         (SCREEN_WIDTH, GROUND_LEVEL - 30), 2)
 
         dino_color = (100, 100, 100) if not self.dinosaur.is_ducking else (150, 150, 150)
         pygame.draw.rect(self.screen, dino_color, self.dinosaur.rect)
@@ -155,8 +156,11 @@ class GameEngine:
 
         score_text = self.font.render(f'Score: {self.score}', True, (0, 0, 0))
         speed_text = self.font.render(f'Speed: {self.game_speed}', True, (0, 0, 0))
+        hp_text = self.font.render(f'HP: {self.dinosaur.hp}', True, (0, 0, 0))
+
         self.screen.blit(score_text, (10, 10))
         self.screen.blit(speed_text, (10, 50))
+        self.screen.blit(hp_text, (10, 90))
 
         if self.show_controls:
             controls_text = self.small_font.render('Press F to shoot fireballs', True, (0, 0, 0))

@@ -3,10 +3,10 @@ from config import SCREEN_WIDTH, FIREBALL_SPEED
 
 
 class Fireball:
-    def __init__(self, x, y):
+    def __init__(self, x, y, game_speed):
         self.x = x
         self.y = y
-        self.speed = FIREBALL_SPEED
+        self.speed = game_speed + FIREBALL_SPEED
         self.active = True
         self.rect = pygame.Rect(x, y, 20, 10)
 
