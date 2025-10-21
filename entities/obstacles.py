@@ -10,7 +10,7 @@ class Obstacle:
         self.width = width
         self.height = height
         self.destroyed = False
-        self.rect = pygame.Rect(x, y, width, height)
+        self.rect = pygame.Rect(x, y, width, height) # хитбокс
         self.color = color
         self.is_destructible = is_destructible
         self.obstacle_type = obstacle_type
@@ -22,15 +22,15 @@ class Obstacle:
         self.x -= game_speed
         self.rect.x = self.x
 
-    def check_collision(self, dinosaur):
-        # проверка столкновения с дино
+    def check_collision(self, dinosaur) -> bool:
+        '''проверка столкновения с дино '''
         return self.rect.colliderect(dinosaur.rect)
 
-    def is_off_screen(self):
-        # ушло ли за экран
+    def is_off_screen(self) -> bool:
+        '''ушло ли препятствие ли за экран'''
         return self.x + self.width < 0
 
-    def handle_fireball_collision(self, fireball):
+    def handle_fireball_collision(self, fireball) -> bool:
         """обработка столкновения с огненным шаром"""
         if self.is_destructible:
             self.health -= 1
@@ -41,14 +41,14 @@ class Obstacle:
 
 
 class GroundObstacle(Obstacle):
-    # наземные препятствия
+    '''наземные препятствия'''
     def __init__(self, x, y, width, height, color, is_destructible, obstacle_type):
         ground_y = GROUND_LEVEL - height
         super().__init__(x, ground_y, width, height, color, is_destructible, obstacle_type, is_flying=False)
 
 
 class FlyingObstacle(Obstacle):
-    # летающие препятствия
+    '''летающие препятствия'''
     def __init__(self, x, y, width, height, color, is_destructible):
         min_y = GROUND_LEVEL - height - 15
         if y > min_y:

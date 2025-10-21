@@ -104,7 +104,7 @@ class GameEngine:
             self.fireballs.append(fireball)
 
         for fireball in self.fireballs[:]:
-            fireball.update()
+            fireball.update(dt)
             if not fireball.active:
                 self.fireballs.remove(fireball)
 

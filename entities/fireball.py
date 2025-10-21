@@ -10,15 +10,14 @@ class Fireball:
         self.speed = game_speed + FIREBALL_SPEED
         self.game_speed = game_speed  # сохранение скорости игры для движения взрыва
         self.active = True
-        self.rect = pygame.Rect(x, y, 20, 20)
-        
+        self.rect = pygame.Rect(x, y, 20, 20) # хитбокс
         # анимации
-        self.animations = {}
+        self.animations: dict[str, Animation] = {}
         self.current_animation = None
         self.is_exploding = False
         self.explosion_complete = False
 
-    def load_animations(self, animation_config):
+    def load_animations(self, animation_config: dict[str, dict[str, str | int]]):
         for anim_name, config in animation_config.items():
             if anim_name.startswith('fireball_'):
                 self.animations[anim_name] = Animation(
@@ -37,15 +36,15 @@ class Fireball:
             self.is_exploding = True
             self.current_animation = self.animations['fireball_explode']
             self.current_animation.reset(forward=True)
-            self.speed = -self.game_speed
+            self.speed = -self.game_speed # для эффекта "привязки" к препятствию после столкновения
 
-    def update(self):
+    def update(self, dt):
         if not self.active:
             return
             
         # обновление анимации
         if self.current_animation:
-            self.current_animation.update(16)
+            self.current_animation.update(dt)
             
             # если анимация взрыва завершена, деактивируем снаряд
             if self.is_exploding and self.current_animation.is_complete():
