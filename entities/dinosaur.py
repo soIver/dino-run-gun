@@ -1,6 +1,8 @@
 import pygame
 from config import GROUND_LEVEL, GRAVITY, JUMP_STRENGTH, DUCKING_GRAVITY_MULTIPLIER, FIREBALL_COOLDOWN
 from entities.animation import Animation
+from entities.fireball import Fireball
+from assets.config import ANIMATION_CONFIG
 
 class Dinosaur:
     def __init__(self, x, y):
@@ -18,7 +20,7 @@ class Dinosaur:
         self.is_duck_key_pressed = False
 
         # анимации разных частей тела
-        self.animations = {}
+        self.animations: dict[str, Animation] = {}
         self.current_head_anim = None
         self.current_body_anim = None
         self.current_legs_anim = None
@@ -31,7 +33,7 @@ class Dinosaur:
         self.normal_rect = pygame.Rect(x, y, 40, 60)
         self.ducking_rect = pygame.Rect(x, y+20, 40, 30)
 
-    def load_animations(self, animation_config):
+    def load_animations(self, animation_config: dict[str, dict[str, str | int]]):
         for anim_name, config in animation_config.items():
             self.animations[anim_name] = Animation(
                 config['path'],
@@ -88,9 +90,7 @@ class Dinosaur:
             self.animations['dino_head_shoot'].reset(forward=True)
             # Задержка перед появлением снаряда
             self.shoot_delay_active = True
-            self.shoot_delay_timer = current_time + 200  # 200ms задержка
-            return None  # Пока не создаём снаряд
-        return None
+            self.shoot_delay_timer = current_time + 200  # 200ms задержка перед появлением снаряда
 
     def update(self, dt, game_speed):
         current_time = pygame.time.get_ticks()
@@ -101,10 +101,8 @@ class Dinosaur:
         # проверка задержки перед созданием снаряда
         if self.shoot_delay_active and current_time >= self.shoot_delay_timer:
             self.shoot_delay_active = False
-            from entities.fireball import Fireball
             fireball = Fireball(self.x + 50, self.y + 15, game_speed)
             # загружаем анимации для снаряда
-            from assets.config import ANIMATION_CONFIG
             fireball.load_animations(ANIMATION_CONFIG)
             return fireball
 
@@ -141,13 +139,12 @@ class Dinosaur:
                 self.is_shooting = False
                 self.current_head_anim = self.animations['dino_head_run']
         
-        # обновление анимации тела кроме приседания
+        # обновление анимации тела, если не в присяде
         if (self.current_body_anim and 
             self.current_body_anim != duck_anim and 
             not self.is_jumping):
             self.current_body_anim.update(dt, speed_multiplier)
-
-        if self.is_ducking:
+        elif self.is_ducking:
             self.ducking_rect.x = self.x
             self.ducking_rect.y = GROUND_LEVEL - 30
         else:
@@ -185,7 +182,7 @@ class Dinosaur:
                 screen.blit(legs_frame, (self.x - 45, body_y - 23))
             
         else:
-            # отрисовка динозавра по частям
+            # отрисовка динозавра по частям, если он не сидит
             
             # ноги
             if self.current_legs_anim:

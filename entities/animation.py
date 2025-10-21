@@ -8,9 +8,9 @@ class Animation:
         self.frame_height = self.sprite_sheet.get_height()
         self.frame_duration = frame_duration
         self.loop = loop
-        self.scale = scale
+        self.scale = scale # пропорциональное увеличение спрайтов относительно исходного размера
         self.frames = []
-        self._split_frames()
+        self._split_frames() # всегда делим лист на спрайты при инициализации
         self.current_frame = 0
         self.timer = 0
         self.active = True
@@ -33,7 +33,7 @@ class Animation:
             return
             
         self.timer += dt
-        adjusted_duration = self.frame_duration / speed_multiplier
+        adjusted_duration = self.frame_duration / max(0.1, speed_multiplier)  # защита от деления на 0
         
         if self.timer >= adjusted_duration:
             self.timer = 0
@@ -67,7 +67,8 @@ class Animation:
     def set_frame(self, frame_index):
         self.current_frame = max(0, min(frame_index, self.frame_count - 1))
     
-    def is_complete(self):
+    def is_complete(self) -> bool:
+        '''проверка анимации на завершение'''
         if self.forward:
             return self.current_frame >= self.frame_count - 1 and not self.loop
         else:
